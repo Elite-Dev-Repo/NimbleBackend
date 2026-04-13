@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserViewSet, ProductViewSet, CartItemViewSet, OrderViewSet
+from .views import GetUserView, UserViewSet, ProductViewSet, CartItemViewSet, OrderViewSet
 
 
 # Initialize the router
@@ -15,4 +15,5 @@ router.register(r'orders', OrderViewSet, basename='order')
 # The router.urls property provides the full list of generated URL patterns
 urlpatterns = [
     path('', include(router.urls)),
+    path('me/', GetUserView.as_view(), name='get-user'),
 ]

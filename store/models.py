@@ -18,7 +18,6 @@ class Product(models.Model):
     category = models.CharField(max_length=20, choices=CategoryChoices.choices, default=CategoryChoices.FEATURED)
     image = models.ImageField(upload_to='product_images/')
     created_at = models.DateTimeField(auto_now_add=True)
-    size = models.CharField(max_length=20, blank=True, null=True)
     color = models.CharField(max_length=20, blank=True, null=True)
     keywords = models.CharField(max_length=50, blank=True, null=True)
 

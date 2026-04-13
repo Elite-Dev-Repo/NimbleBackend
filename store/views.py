@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions,generics
 from .models import Product, Order, CartItem
 from .serializers import ProductSerializer, OrderSerializer, UserSerializer, CartItemSerializer
 from django.contrib.auth.models import User
@@ -6,6 +6,15 @@ from django.contrib.auth.models import User
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
+
+
+class GetUserView(generics.RetrieveAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer

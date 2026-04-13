@@ -5,17 +5,20 @@ from django.contrib.auth.models import User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'username', 'email', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
 
+
+
+
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'category', 'image', 'created_at', 'size', 'color', 'keywords']
+        fields = ['id', 'name', 'price', 'category', 'image', 'created_at', 'color', 'keywords']
 
 class CartItemSerializer(serializers.ModelSerializer):
     # 1. Nest the product details for the GET response

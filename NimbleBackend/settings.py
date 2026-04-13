@@ -9,6 +9,15 @@ from datetime import timedelta
 
 load_dotenv()
 
+
+# Paystack configuration
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
+PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY")
+PAYSTACK_CALLBACK_URL = os.getenv("PAYSTACK_CALLBACK_URL")
+PAYSTACK_WEBHOOK_SECRET = os.getenv("PAYSTACK_WEBHOOK_SECRET")
+
+
+
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -31,6 +40,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework_simplejwt',
     'django_filters',
+    'payments',
 ]
 
 MIDDLEWARE = [
