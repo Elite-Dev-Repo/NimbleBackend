@@ -20,7 +20,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
     permission_classes = [permissions.AllowAny]
-    lookup_field = 'id'  # Use UUID for lookups
+    lookup_field = 'id'
 
 class CartItemViewSet(viewsets.ModelViewSet):
     serializer_class = CartItemSerializer
@@ -36,8 +36,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+
     def perform_create(self, serializer):
-        # Added this to ensure orders are linked to the user
         serializer.save(user=self.request.user)
 
     def get_queryset(self):

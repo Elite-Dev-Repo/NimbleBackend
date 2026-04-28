@@ -128,8 +128,22 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # Required for Vercel
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# --- MEDIA FILES (Vercel Blob) ---
+if not DEBUG:
+    # Point Django to your custom bridge class
+    STORAGES = {
+        "default": {
+            "BACKEND": "NimbleBackend.backends.VercelBlobStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+    # No need for MEDIA_URL/ROOT in Prod as Vercel Blob provides absolute URLs
+else:
+    # Local development still uses your local folder
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # --- CORS & CSRF CONFIGURATION ---
 CORS_ALLOW_CREDENTIALS = True
