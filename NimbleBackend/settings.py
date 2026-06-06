@@ -132,15 +132,20 @@ CORS_ALLOW_CREDENTIALS = True
 # Front-end URLs that are allowed to talk to this API
 FRONTEND_URL = os.getenv("FRONTEND_URL", 'http://localhost:5173')
 
+# We add your production frontend domain directly here to guarantee it passes CORS 
+# regardless of whether the Vercel env variable loaded properly.
 CORS_ALLOWED_ORIGINS = [
     FRONTEND_URL,
     "http://127.0.0.1:5173",
+    "http://localhost:5173",
+    "https://nimble-store.vercel.app",
     "https://nimble-backend-gamma.vercel.app",
 ]
 
-# Important for POST/PUT requests
+# Important for POST/PUT requests (Must not include trailing slashes)
 CSRF_TRUSTED_ORIGINS = [
     FRONTEND_URL,
+    "https://nimble-store.vercel.app",
     "https://nimble-backend-gamma.vercel.app",
 ]
 
