@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 import uuid
+from cloudinary.models import CloudinaryField
 
 # Create your models here.
 
@@ -16,9 +17,8 @@ class Product(models.Model):
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.CharField(max_length=20, choices=CategoryChoices.choices, default=CategoryChoices.FEATURED)
-    image = models.ImageField(upload_to='product_images/')
+    image = CloudinaryField('Product Image')
     created_at = models.DateTimeField(auto_now_add=True)
-    color = models.CharField(max_length=20, blank=True, null=True)
     keywords = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
@@ -45,20 +45,65 @@ class CartItem(models.Model):
 
 
 class Order(models.Model):
+    class PaymentStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        PAID = "paid", "Paid"
+        FAILED = "failed", "Failed"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="orders"
+    )
+
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PENDING
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
-    ordering = ['-created_at']
 
-
-
-    def save(self, *args, **kwargs):
-        self.total_price = self.product.price * self.quantity
-        super().save(*args, **kwargs)
-
+    class Meta:
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Order #{self.id} by {self.user.username}"
+        return f"Order {self.id}"
+
+
+
+
+class OrderItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE
+    )
+
+    quantity = models.PositiveIntegerField(default=1)
+
+    price_at_purchase = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    def total_price(self):
+        return self.price_at_purchase * self.quantity
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"

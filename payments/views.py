@@ -1,28 +1,30 @@
-from django.shortcuts import render
-
-# Create your views here.
-import requests
 from django.conf import settings
+from django.db import transaction
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from .models import Payment
-from django.utils import timezone
 
 from payments.client import paystack
 from .models import Payment
 from .serializers import PaymentSerializer
+from store.models import Order
+
 
 class InitiatePaymentView(APIView):
     def post(self, request):
         serializer = PaymentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        order = data.get("order")
+
+        if order and order.user_id != request.user.id:
+            return Response({"error": "Order not found"}, status=404)
 
         payment = Payment.objects.create(
             user=request.user,
             email=data["email"],
-            amount=data["amount"] * 100,
+            amount=int(data["amount"] * 100),
+            order=order,
         )
 
         res = paystack.post("/transaction/initialize", json={
@@ -30,7 +32,10 @@ class InitiatePaymentView(APIView):
             "amount":       payment.amount,
             "reference":    str(payment.reference),
             "callback_url": settings.PAYSTACK_CALLBACK_URL,
-            "metadata":     {"payment_id": payment.pk},
+            "metadata": {
+                "payment_id": payment.pk,
+                "order_id": str(payment.order_id) if payment.order_id else None,
+            },
             "channels":     ["card", "bank", "ussd", "bank_transfer"],
         })
 
@@ -43,13 +48,11 @@ class InitiatePaymentView(APIView):
             "authorization_url": body["data"]["authorization_url"],
             "reference":         str(payment.reference),
         }, status=201)
-    
-
 
 
 class VerifyPaymentView(APIView):
-    def get(self, request):
-        reference = request.query_params.get("reference")
+    def get(self, request, reference=None):
+        reference = reference or request.query_params.get("reference")
         if not reference:
             return Response({"error": "reference is required"}, status=400)
 
@@ -66,17 +69,33 @@ class VerifyPaymentView(APIView):
 
         tx = body["data"]
 
-        # Update local record
-        if tx["status"] == "success":
-            payment.status  = "success"
-            payment.channel = tx.get("channel", "")
+        tx_status = tx.get("status")
+        payment_status = tx_status if tx_status in dict(Payment.STATUS_CHOICES) else payment.status
+        order_status = None
+
+        if tx_status == "success":
             payment.paid_at = timezone.now()
-            payment.save(update_fields=["status", "channel", "paid_at"])
+            order_status = Order.PaymentStatus.PAID
+        elif tx_status in {"failed", "abandoned"}:
+            payment.paid_at = None
+            order_status = Order.PaymentStatus.FAILED
+
+        payment.status = payment_status
+        payment.channel = tx.get("channel") or ""
+        payment.currency = tx.get("currency") or payment.currency
+
+        with transaction.atomic():
+            payment.save(update_fields=["status", "channel", "currency", "paid_at"])
+            if payment.order_id and order_status:
+                payment.order.payment_status = order_status
+                payment.order.save(update_fields=["payment_status"])
 
         return Response({
-            "status":    tx["status"],
+            "status":    tx_status,
+            "payment_status": payment.status,
+            "order_payment_status": payment.order.payment_status if payment.order_id else None,
             "amount":    tx["amount"] / 100,
-            "currency":  tx["currency"],
+            "currency":  tx.get("currency"),
             "channel":   tx.get("channel"),
             "paid_at":   tx.get("paid_at"),
             "reference": tx["reference"],

@@ -6,6 +6,7 @@ from django.db import models
 import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
+from store.models import Order
 
 User = get_user_model()
 
@@ -26,6 +27,13 @@ class Payment(models.Model):
     currency      = models.CharField(max_length=10, default="NGN")
     paid_at       = models.DateTimeField(null=True, blank=True)
     metadata      = models.JSONField(default=dict, blank=True)
+    order = models.OneToOneField(
+    Order,
+    on_delete=models.CASCADE,
+    related_name="payment",
+    null=True,
+    blank=True
+)
     created_at    = models.DateTimeField(auto_now_add=True)
     updated_at    = models.DateTimeField(auto_now=True)
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Order, CartItem
+from .models import Product, Order, CartItem, OrderItem
 from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
@@ -14,17 +14,24 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 
-
 class ProductSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'category', 'image', 'created_at', 'color', 'keywords']
+        fields = ['id', 'name', 'price', 'category', 'image', 'created_at', 'keywords']
+
+    def get_image(self, instance):
+            if instance.image:
+                return instance.image.url
+            return None
+
+
 
 class CartItemSerializer(serializers.ModelSerializer):
-    # 1. Nest the product details for the GET response
     product = ProductSerializer(read_only=True)
     
-    # 2. Allow the frontend to send just the product ID when POSTing/Adding to cart
+   
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(), 
         source='product', 
@@ -33,15 +40,35 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CartItem
-        # 3. Include both fields here
         fields = ['id', 'user', 'product', 'product_id', 'quantity', 'created_at']
         read_only_fields = ['user']
 
-class OrderSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
 
     class Meta:
+        model = OrderItem
+        fields = [
+            "id",
+            "product",
+            "quantity",
+            "price_at_purchase"
+        ]
+        
+        
+        
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
         model = Order
-        fields = ['id', 'user', 'product', 'quantity', 'total_price', 'created_at']
-        read_only_fields = ['total_price']
+        fields = [
+            "id",
+            "total_price",
+            "payment_status",
+            "items",
+            "created_at"
+        ]
