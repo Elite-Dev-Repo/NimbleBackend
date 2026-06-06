@@ -25,10 +25,6 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
 ]
 
-# Add Vercel's dynamic deployment URL if it exists
-if os.getenv("VERCEL_URL"):
-    ALLOWED_HOSTS.append(os.getenv("VERCEL_URL"))
-
 # Paystack configuration
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY")
@@ -55,7 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
-    # 'whitenoise.middleware.WhiteNoiseMiddleware', 
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -134,7 +130,7 @@ STATIC_URL = 'static/'
 CORS_ALLOW_CREDENTIALS = True
 
 # Front-end URLs that are allowed to talk to this API
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+FRONTEND_URL = os.getenv("FRONTEND_URL", 'http://localhost:5173')
 
 CORS_ALLOWED_ORIGINS = [
     FRONTEND_URL,
@@ -156,6 +152,7 @@ import cloudinary.api
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
 CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+
 cloudinary.config(
     cloud_name=CLOUDINARY_CLOUD_NAME,
     api_key=CLOUDINARY_API_KEY,
